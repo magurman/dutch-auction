@@ -7,7 +7,7 @@ contract DutchAuction {
 
     string DEBUGGING_STRING = "DUTCH AUCTION: ";
 
-    uint256 reservePrice;
+    uint256 public reservePrice;
     address judgeAddress;
     uint256 offerPriceDecrement;
 
@@ -28,7 +28,7 @@ contract DutchAuction {
         require(_numBlocksAuctionOpen > 0, "Auction must be open for more than 0 blocks.");
         require(_offerPriceDecrement > 0, "Offer price decrement must be greater than 0.");
         require(_reservePrice > 0, "Reserve price must be greater than 0!");
-
+        require(msg.sender != _judgeAddress, "contract owner cannot be judge.");
 
         reservePrice = _reservePrice;
         judgeAddress = _judgeAddress;
