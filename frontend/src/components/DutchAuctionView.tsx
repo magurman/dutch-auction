@@ -130,6 +130,11 @@ export function DutchAuctionView() : ReactElement {
       return;
     }
 
+    if (dutchAuctionIsOver) {
+      window.alert("Auction is over! No longer accepting bids.")
+      return;
+    }
+
     console.log("Placing bid on dutch auction contract.");
 
     async function placeBid(signer: Signer, bidAmount: number): Promise<void> {
