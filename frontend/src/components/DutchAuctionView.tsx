@@ -184,10 +184,25 @@ export function DutchAuctionView() : ReactElement {
 
     async function lookupContract(address: any): Promise<void> {
 
-      const d = new ethers.ContractFactory(DutchAuctionArtifact.abi, DutchAuctionArtifact.bytecode);
-      const dA = d.attach(address);
+      try {
+        const dutchAuctionContract = new ethers.Contract(address, DutchAuctionArtifact.abi, library);
+        setDutchAuctionContract(dutchAuctionContract);
+        setDutchAuctionContractAddr(dutchAuctionContract.address);
+        setDutchAuctionOwner(await dutchAuctionContract.owner());
+        setDutchAuctionIsOver(await dutchAuctionContract.auctionOver());
+        setDutchAuctionCurrentPrice(await dutchAuctionContract.getCurrentPrice());
+        setDutchAuctionReservePrice(await dutchAuctionContract.reservePrice());
+      } catch(error: any) {
+        window.alert("Error!" + (error && error.message ? `\n\n${error.message}` : ''));
+      }
     }
+
     lookupContract(address);
+    clearInputBox("lookupAddress");
+  }
+
+  function clearInputBox(elementId: string): void {
+    (document.getElementById(elementId) as HTMLInputElement).value = "";
   }
 
   return (
