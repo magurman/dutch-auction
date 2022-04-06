@@ -1,12 +1,11 @@
 import { ReactElement, useState, useEffect, MouseEvent } from "react";
 import { useWeb3React } from '@web3-react/core';
-import { BigNumber, Contract, ContractFactory, ethers, Signer } from 'ethers';
+import { BigNumber, Contract, ethers, Signer } from 'ethers';
 import styled from 'styled-components';
 import { Divider } from "./Divider"
 import { Provider } from '../utils/provider';
 import DutchAuctionArtifact from '../artifacts/contracts/DutchAuction.sol/DutchAuction.json';
-import { sign } from "crypto";
-import { json } from "stream/consumers";
+
 
 const StyledDeployContractButton = styled.button`
   width: 180px;
@@ -19,6 +18,8 @@ const StyledDeployContractButton = styled.button`
 
 const StyledLabel = styled.label`
   font-weight: bold;
+  margin-left: 10px;
+  align-self: center;
 `;
 
 const StyledDutchAuctionDiv = styled.div`
@@ -28,17 +29,45 @@ const StyledDutchAuctionDiv = styled.div`
   grid-gap: 10px;
   place-self: center;
   align-items: center;
+  font-family: courier, courier new, serif;
+`;
+
+const LookupDutchAuctionDiv = styled.div`
+  display: flex;
+  grid-gap: 10px;
+  place-self: center;
+  align-items: center;
+  font-family: courier, courier new, serif;
 `;
 
 const StyledInput = styled.input`
   padding: 0.4rem 0.6rem;
   line-height: 2fr;
+  margin-left: 5px;
+  background: rgb(105,105,105);
+`;
+
+const StyledAddrsInput = styled.input`
+  padding: 0.4rem 0.6rem;
+  line-height: 2fr;
+  margin-left: 5px;
+  background: rgb(105,105,105);
+  width: 400px;
 `;
 
 const CreateDutchAuctionDiv = styled.div`
   display: flex;
-  // flex-wrap: wrap;
-  justify-content: space-around;
+  justify-content: center;
+  font-family: courier, courier new, serif;
+`;
+
+const DataDiv = styled.div`
+  font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+  color: white;
+  align-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;
 
 const StyledButton = styled.button`
@@ -57,14 +86,10 @@ export function DutchAuctionView() : ReactElement {
   const [dutchAuctionContract, setDutchAuctionContract] = useState<Contract>();
   const [dutchAuctionContractAddr, setDutchAuctionContractAddr] = useState<string>('');
   const [dutchAuctionIsOver, setDutchAuctionIsOver] = useState<Boolean>();
+  const [dutchAuctionIsFinalized, setDutchAuctionIsFinalized] = useState<Boolean>();
   const [dutchAuctionOwner, setDutchAuctionOwner] = useState<any>(undefined);
   const [dutchAuctionCurrentPrice, setDutchAuctionCurrentPrice] = useState<BigNumber>();
   const [dutchAuctionReservePrice, setDutchAuctionReservePrice] = useState<BigNumber>();
-
-
-
-  let auctionOver = undefined;
-  let auctionOwner = undefined;
 
   useEffect((): void => {
     if (!library) {
@@ -75,7 +100,7 @@ export function DutchAuctionView() : ReactElement {
     setSigner(library.getSigner());
   }, [library]);
 
-  function handleDeployDutchAuction(event: MouseEvent<HTMLButtonElement>) {
+  async function handleDeployDutchAuction(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
 
     // make sure signer is defined
@@ -85,7 +110,7 @@ export function DutchAuctionView() : ReactElement {
     }
 
     console.log("Signer present. Deploying contract.");
-    async function deployDutchAuctionContract(signer: Signer, reservePrice: number, judgeAddress: any, numBlocks: number, priceDecrement: number): Promise<void> {
+    async function deployDutchAuctionContract(signer: Signer, reservePrice: number, judgeAddress: any, numBlocks: number, priceDecrement: number): Promise<any> {
       const DutchAuction = new ethers.ContractFactory(DutchAuctionArtifact.abi, DutchAuctionArtifact.bytecode, signer);
       
       try {
@@ -94,16 +119,10 @@ export function DutchAuctionView() : ReactElement {
         await dutchAuctionContract.deployed();
 
         setDutchAuctionContract(dutchAuctionContract);
-        setDutchAuctionIsOver(await dutchAuctionContract?.auctionOver());
-        setDutchAuctionOwner(await dutchAuctionContract?.owner());
-        setDutchAuctionCurrentPrice(await dutchAuctionContract?.getCurrentPrice());
-        setDutchAuctionReservePrice(await dutchAuctionContract?.reservePrice());
-        setDutchAuctionContractAddr(dutchAuctionContract.address);
-
         window.alert(`Dutch auction deployed to: " + ${dutchAuctionContract.address}`);
+        return dutchAuctionContract;
       } catch (error: any) {
         // window.alert("There was an error with the transaction.");
-        console.log("json error: " + JSON.stringify(error.data));
         window.alert("Error!" + (error && error.message ? `\n\n${error.message}` : ''));
       }
     }
@@ -113,7 +132,10 @@ export function DutchAuctionView() : ReactElement {
     const priceDecrement: number = parseInt((document.getElementById("priceDecrement") as HTMLInputElement).value);
     const judgeAddress = (document.getElementById("judgeAddress") as HTMLInputElement).value;
 
-    deployDutchAuctionContract(signer, reservePrice, judgeAddress, numBlocks, priceDecrement);
+    const dutchAuction = await deployDutchAuctionContract(signer, reservePrice, judgeAddress, numBlocks, priceDecrement);
+
+    await handleRefresh(dutchAuction);
+    clearInputBox("reservePrice", "numBlocks", "priceDecrement", "judgeAddress");
   }
 
   async function handlePlaceBid(event: MouseEvent<HTMLButtonElement>): Promise<void> {
@@ -121,12 +143,12 @@ export function DutchAuctionView() : ReactElement {
     event.preventDefault();
 
     if (!signer) {
-      console.log("No Signer.");
+      window.alert("No Signer.");
       return;
     }
 
     if (!dutchAuctionContract) {
-      console.log("No dutch acution contract.");
+      window.alert("No dutch acution contract.");
       return;
     }
 
@@ -135,25 +157,18 @@ export function DutchAuctionView() : ReactElement {
       return;
     }
 
-    console.log("Placing bid on dutch auction contract.");
-
     async function placeBid(signer: Signer, bidAmount: number): Promise<void> {
 
       if (!signer) {
-        console.log("No Signer.");
         return;
       }
 
-      console.log("Signer address: " + await signer.getAddress());
-
       if (!dutchAuctionContract) {
-        console.log("No dutch acution contract.");
         return;
       }
 
       try {
-        const address: any = await dutchAuctionContract.connect(signer).bid({value: bidAmount});
-        const reciept = await address.wait();
+        await dutchAuctionContract.connect(signer).bid({value: bidAmount});
       } catch (error: any) {
         window.alert("Error!" + (error && error.message ? `\n\n${error.message}` : ''));
       }
@@ -162,52 +177,72 @@ export function DutchAuctionView() : ReactElement {
     const bidAmount: number  = parseInt((document.getElementById("bidAmount") as HTMLInputElement).value);
 
     await placeBid(signer, bidAmount);
-    setDutchAuctionIsOver(await dutchAuctionContract?.auctionOver());
+    handleRefresh(dutchAuctionContract);
+    clearInputBox("bidAmount");
   }
 
-  async function handleRefresh(event: MouseEvent<HTMLButtonElement>): Promise<void> {
-    if (!dutchAuctionContract) {
-      console.log("No dutch acution contract.");
+  async function handleRefresh(newDutchAuction: any): Promise<void> {
+    if (!newDutchAuction) {
+      window.alert("No dutch acution contract to refresh with.");
       return;
     }
 
-    async function refresh(): Promise<void> {
-      setDutchAuctionIsOver(await dutchAuctionContract?.auctionOver());
-      setDutchAuctionCurrentPrice(await dutchAuctionContract?.getCurrentPrice());
+    async function refresh(newDutchAuction: any): Promise<void> {
+
+      if (!newDutchAuction) {
+        return;
+      }
+
+      setDutchAuctionContract(newDutchAuction);
+      setDutchAuctionContractAddr(newDutchAuction.address);
+      setDutchAuctionOwner(await newDutchAuction.owner());
+      setDutchAuctionIsOver(await newDutchAuction.auctionOver());
+      setDutchAuctionIsFinalized(await newDutchAuction.finalized());
+      setDutchAuctionCurrentPrice(await newDutchAuction.getCurrentPrice());
+      setDutchAuctionReservePrice(await newDutchAuction.reservePrice());
     }
-    refresh();
+    await refresh(newDutchAuction);
   }
 
-  async function handleLookupContract(event: MouseEvent<HTMLButtonElement>): Promise<void> {
+  async function handleLookupContract(event: MouseEvent<HTMLButtonElement>): Promise<any> {
     
     const address: any = (document.getElementById("lookupAddress") as HTMLInputElement).value;
 
-    async function lookupContract(address: any): Promise<void> {
+    async function lookupContract(address: any): Promise<any> {
 
       try {
         const dutchAuctionContract = new ethers.Contract(address, DutchAuctionArtifact.abi, library);
-        setDutchAuctionContract(dutchAuctionContract);
-        setDutchAuctionContractAddr(dutchAuctionContract.address);
-        setDutchAuctionOwner(await dutchAuctionContract.owner());
-        setDutchAuctionIsOver(await dutchAuctionContract.auctionOver());
-        setDutchAuctionCurrentPrice(await dutchAuctionContract.getCurrentPrice());
-        setDutchAuctionReservePrice(await dutchAuctionContract.reservePrice());
+        return dutchAuctionContract;
       } catch(error: any) {
         window.alert("Error!" + (error && error.message ? `\n\n${error.message}` : ''));
       }
     }
 
-    lookupContract(address);
+    const dutchAuction = await lookupContract(address);
+    handleRefresh(dutchAuction);
     clearInputBox("lookupAddress");
   }
 
-  function clearInputBox(elementId: string): void {
-    (document.getElementById(elementId) as HTMLInputElement).value = "";
+  async function handleFinalizeAuction(event: MouseEvent<HTMLButtonElement>): Promise<void> {
+    if (!dutchAuctionContract) {
+      window.alert("No dutch acution contract specified.");
+    }
+
+    if (dutchAuctionIsOver) {
+      window.alert("Cannot call finalize on auction that isn't over!");
+    }
+    return;
+  }
+
+  function clearInputBox(...elementIds: string[]): void {
+
+    elementIds.forEach((id) => {
+      (document.getElementById(id) as HTMLInputElement).value = "";
+    });
   }
 
   return (
       <>
-          
           <CreateDutchAuctionDiv>
             <StyledLabel>Reserve Price</StyledLabel>
             <StyledInput id="reservePrice"></StyledInput>
@@ -216,59 +251,74 @@ export function DutchAuctionView() : ReactElement {
             <StyledLabel>New Block Price Decrement</StyledLabel>
             <StyledInput id="priceDecrement"></StyledInput>
             <StyledLabel>Judge Address</StyledLabel>
-            <StyledInput id="judgeAddress"></StyledInput>
+            <StyledAddrsInput id="judgeAddress"></StyledAddrsInput>
           </CreateDutchAuctionDiv>
-          <StyledDeployContractButton 
-            onClick={handleDeployDutchAuction}
-          >
+          <StyledDeployContractButton onClick={handleDeployDutchAuction}>
                   Deploy New Dutch Auction Contract
           </StyledDeployContractButton>
           <Divider/>
-          <StyledDutchAuctionDiv>
+          <LookupDutchAuctionDiv>
             <StyledLabel>Lookup Dutch Auction by Address</StyledLabel>
-            <StyledInput id="lookupAddress"></StyledInput>
+            <StyledAddrsInput id="lookupAddress"></StyledAddrsInput>
             <StyledButton onClick={handleLookupContract}>Search</StyledButton>
-          </StyledDutchAuctionDiv>
+          </LookupDutchAuctionDiv>
           <Divider/>
           <StyledDutchAuctionDiv>
               
               <StyledLabel>Contract Address </StyledLabel>
-              <div>
-                  {dutchAuctionContract?.address}
-              </div>
+              <DataDiv>
+                  {/* {dutchAuctionContract?.address} */}
+                  {dutchAuctionContractAddr}
+              </DataDiv>
 
               <div></div>
 
               <StyledLabel>Contract Owner </StyledLabel>
-              <div>
+              <DataDiv>
                   {dutchAuctionOwner}
-              </div>
-              <div></div>
+              </DataDiv>
 
-              <StyledLabel>Auction Over? </StyledLabel>
-              <div>
-                  {dutchAuctionIsOver?.toString()}
-              </div>
               <div></div>
 
               <StyledLabel>Current Price </StyledLabel>
-              <div>
+              <DataDiv>
                   {dutchAuctionCurrentPrice?.toNumber()}
-              </div>
+              </DataDiv>
+
               <div></div>
 
               <StyledLabel>Reserve Price </StyledLabel>
-              <div>
+              <DataDiv>
                   {dutchAuctionReservePrice?.toNumber()}
-              </div>
+              </DataDiv>
+
+              <div></div>
+
+              <StyledLabel>Auction Status </StyledLabel>
+              
+              <DataDiv>
+                  {dutchAuctionIsOver?.toString() == "false" ? "Auction is open" : "Auction is over"}
+              </DataDiv>
+
+              <div></div>
+
+              <StyledLabel>Finalized Status </StyledLabel>
+              
+              <DataDiv>
+                  {dutchAuctionIsFinalized?.toString() == "false" ? "Auction is not finalized" : "Auction is finalized"}
+              </DataDiv>
+
               <div></div>
 
               <StyledLabel>Place Bid </StyledLabel>
               <StyledInput id="bidAmount"/>
               <StyledButton onClick={handlePlaceBid}> Submit Bid</StyledButton>
+              
+              <StyledButton onClick={handleFinalizeAuction}> Finalize Auction</StyledButton>
+              
               <div></div>
-              <StyledButton onClick={handleRefresh}>Refresh Auction Data</StyledButton>
-
+              
+              <StyledButton onClick={() => {handleRefresh(dutchAuctionContract)}}>Refresh Auction Data</StyledButton>
           </StyledDutchAuctionDiv>
       </>
   );

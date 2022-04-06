@@ -9,10 +9,12 @@ import { NetworkConnection } from './components/NetworkConnection';
 const StyledAppDiv = styled.div`
   display: grid;
   grid-gap: 20px;
+  background: grey;
 `;
 
 const StyledDappHeader = styled.h1`
   place-self: center; 
+  font-family: courier, courier new, serif;
 `;
 
 function App() {
