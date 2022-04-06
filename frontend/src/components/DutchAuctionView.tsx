@@ -53,6 +53,7 @@ const StyledAddrsInput = styled.input`
   margin-left: 5px;
   background: rgb(105,105,105);
   width: 400px;
+  margin-right: 10px;
 `;
 
 const CreateDutchAuctionDiv = styled.div`
@@ -241,6 +242,22 @@ export function DutchAuctionView() : ReactElement {
     });
   }
 
+  function getAuctionFinalized() : string {
+    if (dutchAuctionIsFinalized != undefined) {
+      return dutchAuctionIsFinalized?.toString() == "false" ? "Auction is not finalized" : "Auction is finalized"
+    } else {
+      return "";
+    }
+  }
+
+  function getAuctionOver() : string {
+    if (dutchAuctionIsOver != undefined) {
+      return dutchAuctionIsOver?.toString() == "false" ? "Auction is not over" : "Auction is over"
+    } else {
+      return "";
+    }
+  }
+
   return (
       <>
           <CreateDutchAuctionDiv>
@@ -297,7 +314,8 @@ export function DutchAuctionView() : ReactElement {
               <StyledLabel>Auction Status </StyledLabel>
               
               <DataDiv>
-                  {dutchAuctionIsOver?.toString() == "false" ? "Auction is open" : "Auction is over"}
+                  {/* {dutchAuctionIsOver?.toString() == "false" ? "Auction is open" : "Auction is over"} */}
+                  {getAuctionOver()}
               </DataDiv>
 
               <div></div>
@@ -305,7 +323,8 @@ export function DutchAuctionView() : ReactElement {
               <StyledLabel>Finalized Status </StyledLabel>
               
               <DataDiv>
-                  {dutchAuctionIsFinalized?.toString() == "false" ? "Auction is not finalized" : "Auction is finalized"}
+                  {/* {dutchAuctionIsFinalized?.toString() == "false" ? "Auction is not finalized" : "Auction is finalized"} */}
+                  {getAuctionFinalized()}
               </DataDiv>
 
               <div></div>
