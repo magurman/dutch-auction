@@ -42,22 +42,25 @@ const StyledActivateDeactivateDiv = styled.div`
   grid-gap: 10px;
   place-self: center;
   align-items: center;
+  
 `;
 
 const StyledActivateButton = styled.button`
   width: 150px;
-  height: 2rem;
-  border-radius: 1rem;
+  height: 3rem;
   border-color: green;
   cursor: pointer;
+  font-size: large;
+  font-family: courier, courier new, serif;
 `;
 
 const StyledDeactivateButton = styled.button`
   width: 150px;
-  height: 2rem;
-  border-radius: 1rem;
+  height: 3rem;
   border-color: red;
   cursor: pointer;
+  font-size: large;
+  font-family: courier, courier new, serif;
 `;
 
 function Activate(): ReactElement {
