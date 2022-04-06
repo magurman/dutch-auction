@@ -8,7 +8,7 @@ contract DutchAuction {
     string DEBUGGING_STRING = "DUTCH AUCTION: ";
 
     uint256 public reservePrice;
-    address judgeAddress;
+    address public judgeAddress;
     uint256 offerPriceDecrement;
 
     uint256 winningBid;
@@ -87,7 +87,6 @@ contract DutchAuction {
 
         (bool sent, ) = owner.call{value: winningBid}("");
         require(sent, "Failed to pay winning bid amount to owner.");
-
     }
 
     function refund(uint256 refundAmount) public {
