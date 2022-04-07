@@ -1,6 +1,6 @@
 import { ReactElement, useState, useEffect, MouseEvent } from "react";
 import { useWeb3React } from '@web3-react/core';
-import { BigNumber, Contract, ethers, Signer } from 'ethers';
+import { BigNumber, Contract, ethers, Signer, utils } from 'ethers';
 import styled from 'styled-components';
 import { Divider } from "./Divider"
 import { Provider } from '../utils/provider';
@@ -79,6 +79,8 @@ const StyledButton = styled.button`
   font-size: large;
   font-family: courier, courier new, serif;
 `;
+
+const ETH = "ETH";
 
 export function DutchAuctionView() : ReactElement {
   const context = useWeb3React<Provider>();
@@ -160,7 +162,7 @@ export function DutchAuctionView() : ReactElement {
       return;
     }
 
-    async function placeBid(signer: Signer, bidAmount: number): Promise<any> {
+    async function placeBid(signer: Signer, bidAmount: BigNumber): Promise<any> {
 
       if (!signer) {
         return;
@@ -179,9 +181,11 @@ export function DutchAuctionView() : ReactElement {
       }
     }
     
-    const bidAmount: number = parseInt((document.getElementById("bidAmount") as HTMLInputElement).value);
+    const bidAmountEth: string = (document.getElementById("bidAmount") as HTMLInputElement).value;
 
-    placeBid(signer, bidAmount).then(() => {
+    const bidAmountWei: BigNumber = utils.parseEther(bidAmountEth);
+
+    placeBid(signer, bidAmountWei).then(() => {
       handleRefresh(dutchAuctionContract);
     });
 
@@ -300,7 +304,7 @@ export function DutchAuctionView() : ReactElement {
       return "--"
     } else {
       if (dutchAuctionCurrentPrice) {
-        return dutchAuctionCurrentPrice.toNumber().toString();
+        return dutchAuctionCurrentPrice.toNumber().toString() + " " + ETH;
       }
       return ""
     }
@@ -349,7 +353,7 @@ export function DutchAuctionView() : ReactElement {
 
       <StyledLabel>Reserve Price </StyledLabel>
       <DataDiv>
-          {dutchAuctionReservePrice?.toNumber()}
+          {dutchAuctionReservePrice?.toNumber() + " " + ETH}
       </DataDiv>
 
       <div></div>
@@ -378,7 +382,7 @@ export function DutchAuctionView() : ReactElement {
 
       <div></div>
 
-      <StyledLabel>Place Bid </StyledLabel>
+      <StyledLabel>Place Bid (ETH) </StyledLabel>
       <StyledInput id="bidAmount"/>
       <StyledButton onClick={handlePlaceBid}> Submit Bid</StyledButton>
       
