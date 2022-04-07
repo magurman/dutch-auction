@@ -124,7 +124,6 @@ export function DutchAuctionView() : ReactElement {
 
         await dutchAuctionContract.deployed();
 
-        // setDutchAuctionContract(dutchAuctionContract);
         window.alert(`Dutch auction deployed to: " + ${dutchAuctionContract.address}`);
         return dutchAuctionContract;
       } catch (error: any) {
@@ -137,9 +136,27 @@ export function DutchAuctionView() : ReactElement {
     const priceDecrement: number = parseInt((document.getElementById("priceDecrement") as HTMLInputElement).value);
     const judgeAddress = (document.getElementById("judgeAddress") as HTMLInputElement).value;
 
-    // const dutchAuction = await deployDutchAuctionContract(signer, reservePrice, judgeAddress, numBlocks, priceDecrement);
+    if (numBlocks < 1) {
+      window.alert("Auction must be open for at least 1 block.");
+      return;
+    }
+
+    if (priceDecrement < 1) {
+      window.alert("Price decrement must be greater than 0!");
+      return;
+    }
+
+    if (!(reservePrice > 0)) {
+      window.alert("Reserve price must be greater than 0!");
+      return;
+    }
+
+    if (await signer.getAddress() == judgeAddress) {
+      window.alert("Auction owner cannot be judge!");
+      return;
+    }
+
     deployDutchAuctionContract(signer, reservePrice, judgeAddress, numBlocks, priceDecrement).then((p) => handleRefresh(p));
-    // await handleRefresh(dutchAuction);
     clearInputBox("reservePrice", "numBlocks", "priceDecrement", "judgeAddress");
   }
 
@@ -159,6 +176,11 @@ export function DutchAuctionView() : ReactElement {
 
     if (dutchAuctionIsOver) {
       window.alert("Auction is over! No longer accepting bids.")
+      return;
+    }
+
+    if (dutchAuctionContractJudgeAddress == await signer.getAddress()) {
+      window.alert("Judge cannot bid!");
       return;
     }
 
@@ -340,6 +362,13 @@ export function DutchAuctionView() : ReactElement {
       <StyledLabel>Contract Owner </StyledLabel>
       <DataDiv>
           {dutchAuctionOwner}
+      </DataDiv>
+
+      <div></div>
+
+      <StyledLabel>Contract Judge </StyledLabel>
+      <DataDiv>
+          {dutchAuctionContractJudgeAddress}
       </DataDiv>
 
       <div></div>
