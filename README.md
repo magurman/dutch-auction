@@ -1,15 +1,5 @@
-# Basic Sample Hardhat Project
+App is hosted at: https://wandering-boat-5924.on.fleek.co/
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+To run a hardhat ethereum test net locally, execute yarn hardhat compile && yarn hardhat node. 
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+// add instructions to connect metamask wallet to local test net
